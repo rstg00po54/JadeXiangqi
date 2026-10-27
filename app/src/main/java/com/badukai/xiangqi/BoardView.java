@@ -35,7 +35,7 @@ public final class BoardView extends View {
     private static boolean assetsLoaded=false;
     private static Bitmap boardTexture,selectionTexture;
     private static final Bitmap[] redTextures=new Bitmap[8],blackTextures=new Bitmap[8];
-    private static final String ASSET_ROOT="ui_tearoom_x300pro/";
+    private static final String ASSET_ROOT="";
     private static Bitmap bitmap(Context context,String name){
         try(InputStream input=context.getAssets().open(ASSET_ROOT+name)){
             BitmapFactory.Options options=new BitmapFactory.Options();
@@ -45,12 +45,12 @@ public final class BoardView extends View {
     }
     private static synchronized void loadTextures(Context context){
         if(assetsLoaded)return;
-        boardTexture=bitmap(context,"boards/board_warm_stone_1024x1190.png");
-        selectionTexture=bitmap(context,"decorations/selection_ring_256.png");
+        boardTexture=bitmap(context,"ui_tearoom_x300pro/boards/board_warm_stone_1024x1190.png");
+        selectionTexture=bitmap(context,"ui_tearoom_x300pro/decorations/selection_ring_256.png");
         String[] names={"","general","advisor","elephant","horse","rook","cannon","soldier"};
         for(int type=1;type<=7;type++){
-            redTextures[type]=bitmap(context,"pieces/red_"+names[type]+"_256.png");
-            blackTextures[type]=bitmap(context,"pieces/black_"+names[type]+"_256.png");
+            redTextures[type]=bitmap(context,"xiangqi_pieces/red_"+names[type]+"_256.png");
+            blackTextures[type]=bitmap(context,"xiangqi_pieces/black_"+names[type]+"_256.png");
         }
         assetsLoaded=true;
     }
