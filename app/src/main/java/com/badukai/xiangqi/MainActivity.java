@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
+import java.util.Locale;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -31,6 +33,16 @@ public final class MainActivity extends Activity {
     private int screen=HOME,mode=MODE_HUMAN_AI,humanSide=XiangqiGame.RED,level=2,serial=0;
     private int selected=-1,hintFrom=-1,hintTo=-1,replayIndex=0;
     private boolean thinking=false,hintThinking=false,fastAi=false,autoPlaying=false,animating=false;
+    private int timeControlMinutes=10,timedWinner=0;
+    private long redRemainingMs=600000,blackRemainingMs=600000,clockStamp;
+    private boolean foreground=true;
+    private TextView redTimeView,blackTimeView;
+    private final Runnable timerTick=new Runnable(){
+        @Override public void run(){
+            updateClocks();
+            handler.postDelayed(this,250);
+        }
+    };
     private XiangqiGame game=new XiangqiGame();
     private LinearLayout root;
     private BoardView boardView;
@@ -42,7 +54,12 @@ public final class MainActivity extends Activity {
         getWindow().setStatusBarColor(DARK);
         getWindow().setNavigationBarColor(DARK);
         load();home();
+        clockStamp=SystemClock.elapsedRealtime();
+        handler.postDelayed(timerTick,250);
     }
+    @Override protected void onPause(){updateClocks();foreground=false;persist();super.onPause();}
+    @Override protected void onResume(){super.onResume();foreground=true;clockStamp=SystemClock.elapsedRealtime();}
+    @Override protected void onDestroy(){handler.removeCallbacks(timerTick);super.onDestroy();}
     private int dp(float n){return Math.round(getResources().getDisplayMetrics().density*n);}
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_SHORT).show();}
     private GradientDrawable bg(int color,int radius,int border) {
@@ -107,37 +124,81 @@ public final class MainActivity extends Activity {
         animating=false;
     }
     private void home(){
-        ++serial;cancelAnimations();screen=HOME;thinking=false;hintThinking=false;
-        shell("玉弈 · 中国象棋","国风玉石棋盘  ·  随时对弈  ·  AI观战");
-        add(content,label("选择对局方式",18,DARK,true),12);
-        block("♟  人机对弈 · 执红先行","你执红棋，AI 执黑棋 · 支持悔棋和提示",()->newGame(MODE_HUMAN_AI,XiangqiGame.RED));
-        block("♟  人机对弈 · 执黑后行","AI 执红棋先走，你执黑棋",()->newGame(MODE_HUMAN_AI,XiangqiGame.BLACK));
-        block("◉  双 AI 自动对弈","两台 CPU AI 自己下，你可以随时暂停、观察",()->newGame(MODE_AI_AI,XiangqiGame.RED));
-        block("♧  双人同屏对弈","两个人轮流点棋子，不需要联网",()->newGame(MODE_TWO_HUMANS,XiangqiGame.RED));
+        ++serial;cancelAnimations();
+        clockStamp=SystemClock.elapsedRealtime();screen=HOME;thinking=false;hintThinking=false;
+        shell("玉弈象棋 · 大厅","国风棋馆 · 单机挑战 · AI 陪练");
+        LinearLayout banner=col();
+        banner.setPadding(dp(18),dp(20),dp(18),dp(20));
+        banner.setBackground(gradient(Color.rgb(18,71,58),Color.rgb(51,126,94),20));
+        add(banner,label("♜  今日来一局",24,Color.rgb(246,225,171),true),6);
+        add(banner,label("经典象棋 · 人机挑战 · 棋谱复盘",13,Color.WHITE,false),0);
+        add(content,banner,12);
+        add(content,label("对局时限",16,DARK,true),5);
+        LinearLayout timeRow=row();
+        for(final int minutes:new int[]{5,10,15}) {
+            addAction(timeRow,minutes+" 分钟",
+                minutes==timeControlMinutes?JADE:Color.WHITE,
+                minutes==timeControlMinutes,()->{timeControlMinutes=minutes;home();});
+        }
+        add(content,timeRow,10);
+        add(content,label("开始对弈",18,DARK,true),9);
+        block("♟  快速人机 · 执红","红方先手 · "+timeControlMinutes+"分钟场 · 三档难度",()->newGame(MODE_HUMAN_AI,XiangqiGame.RED));
+        block("♟  快速人机 · 执黑","黑方后手 · 棋盘自动翻转 · AI 先行",()->newGame(MODE_HUMAN_AI,XiangqiGame.BLACK));
+        block("♜  双 AI 观战","自动走棋 · 调整速度 · 支持暂停",()->newGame(MODE_AI_AI,XiangqiGame.RED));
+        block("♞  双人同屏","本地两人对弈 · "+timeControlMinutes+"分钟场",()->newGame(MODE_TWO_HUMANS,XiangqiGame.RED));
         SharedPreferences prefs=getSharedPreferences(PREFS,MODE_PRIVATE);
         if(prefs.contains("moves")&&(!prefs.getString("moves","").isEmpty())) {
             block("↺  继续上次对局","自动保存了走子记录，可以接着下",()->{load();autoPlaying=mode==MODE_AI_AI;screen=GAME;renderGame();scheduleAi();});
         }
-        add(content,label("AI 当前为内置 Java 搜索引擎。强棋力的皮卡鱼 Pikafish 可在后续版本接入；目前不使用 GPU/NPU。",12,Color.rgb(113,126,118),false),12);
+        add(content,label("残局闯关、棋力评测与真人联网大厅将分阶段加入。当前版本使用内置 Java CPU AI，不使用 GPU/NPU。",12,Color.rgb(113,126,118),false),12);
     }
     private void newGame(int newMode,int newHumanSide){
         ++serial;cancelAnimations();game=new XiangqiGame();selected=-1;hintFrom=-1;hintTo=-1;
         mode=newMode;humanSide=newHumanSide;thinking=false;hintThinking=false;autoPlaying=newMode==MODE_AI_AI;
+        timedWinner=0;redRemainingMs=blackRemainingMs=timeControlMinutes*60000L;clockStamp=SystemClock.elapsedRealtime();
         screen=GAME;persist();renderGame();scheduleAi();
     }
     private void persist(){
         getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString("moves",game.exportMoves())
-                .putInt("mode",mode).putInt("humanSide",humanSide).putInt("level",level).apply();
+                .putInt("mode",mode).putInt("humanSide",humanSide).putInt("level",level)
+                .putInt("clockMin",timeControlMinutes).putInt("timedWinner",timedWinner)
+                .putLong("redTime",redRemainingMs).putLong("blackTime",blackRemainingMs).apply();
     }
     private void load(){
         SharedPreferences p=getSharedPreferences(PREFS,MODE_PRIVATE);
         mode=p.getInt("mode",MODE_HUMAN_AI);
         humanSide=p.getInt("humanSide",XiangqiGame.RED);
         level=p.getInt("level",2);
+        timeControlMinutes=p.getInt("clockMin",10);
+        redRemainingMs=p.getLong("redTime",timeControlMinutes*60000L);
+        blackRemainingMs=p.getLong("blackTime",timeControlMinutes*60000L);
+        timedWinner=p.getInt("timedWinner",0);
         game=new XiangqiGame();game.importMoves(p.getString("moves",""));
+        clockStamp=SystemClock.elapsedRealtime();
     }
     private boolean isAiTurn(){return mode==MODE_AI_AI||(mode==MODE_HUMAN_AI&&game.turn!=humanSide);}
-    private boolean isGameFinished(){return game.isOver();}
+    private boolean isGameFinished(){return timedWinner!=0||game.isOver();}
+    private String clockText(long timeMs){
+        long seconds=Math.max(0,(timeMs+999)/1000);
+        return String.format(Locale.US,"%02d:%02d",seconds/60,seconds%60);
+    }
+    private void showClock(){
+        if(redTimeView!=null)redTimeView.setText("红方  "+clockText(redRemainingMs));
+        if(blackTimeView!=null)blackTimeView.setText("黑方  "+clockText(blackRemainingMs));
+    }
+    private void updateClocks(){
+        long now=SystemClock.elapsedRealtime();
+        long delta=Math.max(0,now-clockStamp);
+        clockStamp=now;
+        if(!foreground||screen!=GAME||animating||mode==MODE_AI_AI||timedWinner!=0||game.isOver())return;
+        if(game.turn==XiangqiGame.RED)redRemainingMs=Math.max(0,redRemainingMs-delta);
+        else blackRemainingMs=Math.max(0,blackRemainingMs-delta);
+        showClock();
+        if(redRemainingMs==0||blackRemainingMs==0){
+            timedWinner=redRemainingMs==0?XiangqiGame.BLACK:XiangqiGame.RED;
+            ++serial;thinking=false;persist();renderGame();
+        }
+    }
     private void renderGame(){
         screen=GAME;
         String modeText=mode==MODE_AI_AI?"AI × AI 自动对弈":mode==MODE_TWO_HUMANS?"双人同屏":(humanSide==XiangqiGame.RED?"你执红方":"你执黑方");
@@ -145,11 +206,22 @@ public final class MainActivity extends Activity {
         LinearLayout info=row();info.setPadding(dp(13),dp(12),dp(13),dp(12));
         info.setBackground(bg(Color.WHITE,15,Color.rgb(219,229,217)));
         String turn=game.turn==XiangqiGame.RED?"红方":"黑方";
-        String text=isGameFinished()?((game.winner()==XiangqiGame.RED?"红方":"黑方")+"获胜"):
+        String text=isGameFinished()?(( (timedWinner!=0?timedWinner:game.winner())==XiangqiGame.RED?"红方":"黑方")+"获胜"+(timedWinner!=0?" · 超时":"")):
             (turn+"行棋"+(game.inCheck(game.turn)?" · 将军！":"")+(thinking?" · AI 思考中…":""));
         TextView status=label(text,16,JADE,true);info.addView(status,new LinearLayout.LayoutParams(0,-2,1));
         info.addView(label("第 "+(game.history.size()/2+1)+" 回合",12,Color.GRAY,false));
-        add(content,info,10);
+        add(content,info,7);
+        LinearLayout players=row();
+        players.setPadding(dp(10),dp(11),dp(10),dp(11));
+        players.setBackground(bg(Color.rgb(229,237,226),14,Color.rgb(208,223,204)));
+        redTimeView=label("",16,Color.rgb(173,59,52),true);
+        blackTimeView=label("",16,JADE,true);
+        redTimeView.setGravity(Gravity.CENTER);
+        blackTimeView.setGravity(Gravity.CENTER);
+        players.addView(redTimeView,new LinearLayout.LayoutParams(0,dp(32),1));
+        players.addView(blackTimeView,new LinearLayout.LayoutParams(0,dp(32),1));
+        showClock();
+        add(content,players,10);
         boardView=new BoardView(this);boardView.bind(game);
         boardView.setFlipped(mode==MODE_HUMAN_AI&&humanSide==XiangqiGame.BLACK);
         boardView.setSelected(selected);
