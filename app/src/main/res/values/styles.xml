@@ -1,0 +1,11 @@
+<resources>
+  <style name="Theme.JadeXiangqi" parent="android:style/Theme.Material.Light.NoActionBar">
+    <item name="android:fontFamily">sans</item>
+    <item name="android:windowLightStatusBar">false</item>
+    <item name="android:statusBarColor">#103C32</item>
+    <item name="android:navigationBarColor">#103C32</item>
+    <item name="android:windowActionModeOverlay">true</item>
+    <item name="android:colorAccent">#1C8065</item>
+    <item name="android:windowBackground">#F3F4EE</item>
+  </style>
+</resources>
