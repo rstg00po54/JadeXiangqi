@@ -17,7 +17,7 @@ Android Studio 打开项目，Build > Build APK(s)。
 AGP 8.2.2、Gradle 8.5、Java 17、compileSdk 35、minSdk 26。
 
 通过 GitHub Actions 的 Build Jade Xiangqi Android APK 工作流可自动生成 debug APK Artifact。
-在已安装 SDK 的机器执行：
+在安装了 JDK 17、Android SDK 35 的机器执行（已内置 Gradle Wrapper 8.5，首次构建会自动下载 Gradle）：
 
 ```bash
 bash build.sh

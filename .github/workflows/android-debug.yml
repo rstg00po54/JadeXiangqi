@@ -22,7 +22,7 @@ jobs:
       - name: Test pure Java rules
         run: bash scripts/test_core.sh
       - name: Build debug APK
-        run: gradle --no-daemon assembleDebug
+        run: bash ./gradlew --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: JadeXiangqi-debug-apk
