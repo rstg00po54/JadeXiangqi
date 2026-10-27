@@ -1,14 +1,17 @@
 package com.badukai.xiangqi;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
 import java.util.List;
 
 /** Responsive jade/ivory Chinese-chess board, implemented without bitmap resources. */
@@ -19,6 +22,11 @@ public final class BoardView extends View {
     private OnSquareClick listener;
     private int selected=-1, hintFrom=-1, hintTo=-1;
     private boolean allowMoves=true;
+    private boolean flipped=false;
+    private ValueAnimator animator;
+    private XiangqiGame.Move moving;
+    private boolean reversing=false;
+    private float moveProgress=0f;
     private float x0,y0,spacing;
     private static final int FOREST=Color.rgb(24,67,55);
     private static final int GOLD=Color.rgb(186,145,77);
@@ -29,6 +37,46 @@ public final class BoardView extends View {
     public void setSelected(int sq) {this.selected=sq;invalidate();}
     public void setHint(int from,int to) {hintFrom=from;hintTo=to;invalidate();}
     public void setAllowMoves(boolean allow){allowMoves=allow;invalidate();}
+    public void setFlipped(boolean flip){flipped=flip;invalidate();}
+
+    /** Must be called after game position has been changed to the target position. */
+    public void animateMove(XiangqiGame.Move move,boolean undo,Runnable onFinished){
+        cancelMoveAnimation();
+        if(move==null||game==null){if(onFinished!=null)onFinished.run();return;}
+        moving=move;reversing=undo;moveProgress=0f;
+        setAllowMoves(false);
+        ValueAnimator current=ValueAnimator.ofFloat(0f,1f);
+        animator=current;
+        int distance=Math.abs(move.to/9-move.from/9)+Math.abs(move.to%9-move.from%9);
+        current.setDuration(Math.min(340,190+distance*20));
+        current.setInterpolator(new DecelerateInterpolator(1.5f));
+        current.addUpdateListener(a->{
+            if(animator==current){moveProgress=(float)a.getAnimatedValue();invalidate();}
+        });
+        current.addListener(new AnimatorListenerAdapter(){
+            @Override public void onAnimationEnd(Animator animation){
+                if(animator!=current)return;
+                animator=null;moving=null;moveProgress=0f;invalidate();
+                if(onFinished!=null)onFinished.run();
+            }
+        });
+        current.start();
+    }
+
+    public void cancelMoveAnimation(){
+        ValueAnimator previous=animator;
+        animator=null;moving=null;moveProgress=0f;
+        if(previous!=null)previous.cancel();
+        invalidate();
+    }
+    @Override protected void onDetachedFromWindow(){
+        cancelMoveAnimation();
+        super.onDetachedFromWindow();
+    }
+    private int displayRow(int sq){return flipped?9-sq/9:sq/9;}
+    private int displayCol(int sq){return flipped?8-sq%9:sq%9;}
+    private float px(int sq){return x(displayCol(sq));}
+    private float py(int sq){return y(displayRow(sq));}
     public void clearMarkers(){selected=-1;hintFrom=-1;hintTo=-1;invalidate();}
     @Override protected void onMeasure(int widthSpec,int heightSpec){
         int w=MeasureSpec.getSize(widthSpec);
@@ -73,19 +121,41 @@ public final class BoardView extends View {
             List<XiangqiGame.Move> options=game.legalMoves();
             for(XiangqiGame.Move m:options)if(m.from==selected) {
                 p.setStyle(Paint.Style.FILL);p.setColor(Color.argb(170,40,150,97));
-                c.drawCircle(x(m.to%9),y(m.to/9),spacing*.13f,p);
+                c.drawCircle(px(m.to),py(m.to),spacing*.13f,p);
             }
         }
-        for(int sq=0;sq<90;sq++)if(game.board[sq]!=0)drawPiece(c,sq,game.board[sq]);
+        for(int sq=0;sq<90;sq++){
+            if(game.board[sq]==0)continue;
+            if(moving!=null&&sq==(reversing?moving.from:moving.to))continue;
+            if(moving!=null&&reversing&&sq==moving.to&&moving.captured!=0)continue;
+            drawPiece(c,sq,game.board[sq]);
+        }
+        if(moving!=null){
+            if(moving.captured!=0){
+                int alpha=Math.round(255f*(reversing?moveProgress:1f-moveProgress));
+                if(alpha>0)drawPieceAt(c,moving.captured,px(moving.to),py(moving.to),alpha);
+            }
+            int from=reversing?moving.to:moving.from;
+            int to=reversing?moving.from:moving.to;
+            float cx=px(from)+(px(to)-px(from))*moveProgress;
+            float cy=py(from)+(py(to)-py(from))*moveProgress;
+            drawPieceAt(c,moving.piece,cx,cy,255);
+        }
     }
     private float x(int c){return x0+spacing*c;}
     private float y(int r){return y0+spacing*r;}
     private void highlight(Canvas c,int sq,int color){
         p.setStyle(Paint.Style.FILL);p.setColor(color);
-        c.drawCircle(x(sq%9),y(sq/9),spacing*.43f,p);
+        c.drawCircle(px(sq),py(sq),spacing*.43f,p);
     }
     private void drawPiece(Canvas c,int sq,int piece){
-        float cx=x(sq%9),cy=y(sq/9),radius=spacing*.405f;
+        drawPieceAt(c,piece,px(sq),py(sq),255);
+    }
+    private void drawPieceAt(Canvas c,int piece,float cx,float cy,int alpha){
+        float radius=spacing*.405f;
+        int save=-1;
+        if(alpha<255)save=c.saveLayerAlpha(cx-radius-spacing*.12f,cy-radius-spacing*.12f,
+                cx+radius+spacing*.12f,cy+radius+spacing*.12f,alpha);
         p.setStyle(Paint.Style.FILL);p.setColor(Color.argb(90,12,42,32));
         c.drawCircle(cx+spacing*.034f,cy+spacing*.06f,radius,p);
         p.setColor(Color.rgb(247,237,207));c.drawCircle(cx,cy,radius,p);
@@ -98,14 +168,15 @@ public final class BoardView extends View {
         p.setTextSize(spacing*.56f);p.setColor(piece>0?Color.rgb(170,49,47):FOREST);
         Paint.FontMetrics fm=p.getFontMetrics();
         c.drawText(XiangqiGame.pieceName(piece),cx,cy-(fm.ascent+fm.descent)/2,p);
+        if(save!=-1)c.restoreToCount(save);
     }
     @Override public boolean onTouchEvent(MotionEvent event) {
         if(event.getAction()!=MotionEvent.ACTION_UP)return true;
-        if(!allowMoves||game==null||listener==null)return true;
+        if(!allowMoves||game==null||listener==null||moving!=null)return true;
         int col=Math.round((event.getX()-x0)/spacing),row=Math.round((event.getY()-y0)/spacing);
         if(col>=0&&col<9&&row>=0&&row<10) {
             float dx=event.getX()-x(col),dy=event.getY()-y(row);
-            if(Math.hypot(dx,dy)<spacing*.56f)listener.onSquare(row*9+col);
+            if(Math.hypot(dx,dy)<spacing*.56f)listener.onSquare((flipped?9-row:row)*9+(flipped?8-col:col));
         }
         performClick();return true;
     }
