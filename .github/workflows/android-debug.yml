@@ -16,8 +16,9 @@ jobs:
           gradle-version: '8.5'
       - name: Install Android platform
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          if [ -z "$SDKMANAGER" ]; then echo "sdkmanager not found in $ANDROID_HOME"; exit 1; fi
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Test pure Java rules
         run: bash scripts/test_core.sh
       - name: Build debug APK
