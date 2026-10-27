@@ -1,0 +1,271 @@
+{
+  "theme": "sunlit bamboo tea room, original JadeXiangqi visuals",
+  "generated_assets": 44,
+  "runtime_assets": [
+    {
+      "path": "boards/board_warm_stone_1024x1190.png",
+      "width": 1024,
+      "height": 1190,
+      "mode": "RGBA"
+    },
+    {
+      "path": "boards/board_sunlit_wood_1024x1190.png",
+      "width": 1024,
+      "height": 1190,
+      "mode": "RGBA"
+    },
+    {
+      "path": "decorations/timer_ring_gold_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "decorations/avatar_frame_gold_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "decorations/selection_ring_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "decorations/coin_gold_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "decorations/legal_move_marker_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "icons/study_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "icons/hint_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "icons/honor_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "icons/menu_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "icons/undo_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "icons/replay_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "icons/shop_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "icons/profile_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "icons/emoji_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "icons/settings_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "backgrounds/tea_room_lobby_background_1080x1920.png",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB"
+    },
+    {
+      "path": "backgrounds/tea_room_banner_1080x615.png",
+      "width": 1080,
+      "height": 615,
+      "mode": "RGB"
+    },
+    {
+      "path": "backgrounds/bamboo_study_900x560.png",
+      "width": 900,
+      "height": 560,
+      "mode": "RGB"
+    },
+    {
+      "path": "backgrounds/bamboo_ink_garden_900x560.png",
+      "width": 900,
+      "height": 560,
+      "mode": "RGB"
+    },
+    {
+      "path": "backgrounds/bamboo_path_day_900x560.png",
+      "width": 900,
+      "height": 560,
+      "mode": "RGB"
+    },
+    {
+      "path": "pieces/piece_blank_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/red_general_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/black_advisor_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/black_general_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/red_elephant_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/black_soldier_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/black_rook_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/red_rook_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/red_soldier_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/black_elephant_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/red_cannon_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/black_horse_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/red_horse_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/black_cannon_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/red_advisor_256.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/jieqi_600x196.png",
+      "width": 600,
+      "height": 196,
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/review_600x196.png",
+      "width": 600,
+      "height": 196,
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/play_ai_600x196.png",
+      "width": 600,
+      "height": 196,
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/button_blank_600x196.png",
+      "width": 600,
+      "height": 196,
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/start_game_600x196.png",
+      "width": 600,
+      "height": 196,
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/xiangqi_600x196.png",
+      "width": 600,
+      "height": 196,
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/puzzle_600x196.png",
+      "width": 600,
+      "height": 196,
+      "mode": "RGBA"
+    }
+  ],
+  "notes": "Board artwork has mathematically correct 9x10 intersections; PNG Chinese piece labels are redrawn for accuracy. Background concept art is cropped from AI-generated scene artwork. This is not a copied JJ game asset."
+}
