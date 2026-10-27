@@ -11,6 +11,12 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.widget.FrameLayout;
+import java.io.InputStream;
+import java.io.IOException;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
@@ -32,7 +38,7 @@ public final class MainActivity extends Activity {
     private static final String PREFS="xiangqi_v1";
     private int screen=HOME,mode=MODE_HUMAN_AI,humanSide=XiangqiGame.RED,level=2,serial=0;
     private int selected=-1,hintFrom=-1,hintTo=-1,replayIndex=0,puzzleIndex=0,puzzleSelected=-1;
-    private boolean thinking=false,hintThinking=false,fastAi=false,autoPlaying=false,animating=false;
+    private boolean thinking=false,hintThinking=false,fastAi=false,autoPlaying=false,animating=false,sceneMotion=true;
     private int timeControlMinutes=10,timedWinner=0;
     private long redRemainingMs=600000,blackRemainingMs=600000,clockStamp;
     private boolean foreground=true;
@@ -44,7 +50,9 @@ public final class MainActivity extends Activity {
         }
     };
     private XiangqiGame game=new XiangqiGame();
-    private LinearLayout root;
+    private FrameLayout root;
+    private SceneBackgroundView sceneView;
+    private Bitmap woodenTexture;
     private BoardView boardView;
     private BoardView replayBoard,puzzleBoard;
     private XiangqiGame puzzleGame;
@@ -55,6 +63,7 @@ public final class MainActivity extends Activity {
         super.onCreate(saved);
         getWindow().setStatusBarColor(DARK);
         getWindow().setNavigationBarColor(DARK);
+        sceneMotion=getSharedPreferences(PREFS,MODE_PRIVATE).getBoolean("sceneMotion",true);
         load();home();
         clockStamp=SystemClock.elapsedRealtime();
         handler.postDelayed(timerTick,250);
@@ -86,39 +95,65 @@ public final class MainActivity extends Activity {
         p.bottomMargin=dp(mBottom);l.addView(v,p);
     }
     private TextView action(String title,int color,boolean light,Runnable run) {
-        TextView t=label(title,14,light?Color.WHITE:DARK,true);t.setGravity(Gravity.CENTER);
-        t.setPadding(dp(9),dp(13),dp(9),dp(13));
-        t.setBackground(bg(color,13,light?0:GOLD));t.setOnClickListener(v->run.run());
+        TextView t=label(title,14,Color.rgb(250,231,183),true);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(dp(6),dp(12),dp(6),dp(12));
+        t.setBackground(bg(light?Color.argb(238,23,79,62):Color.argb(232,25,59,49),13,GOLD));
+        t.setOnClickListener(v->run.run());
         return t;
+    }
+    private android.graphics.drawable.Drawable woodButton(){
+        if(woodenTexture==null){
+            try(InputStream in=getAssets().open(
+                    "ui_tearoom_x300pro/buttons/button_blank_600x196.png")){
+                woodenTexture=BitmapFactory.decodeStream(in);
+            }catch(IOException ignored){}
+        }
+        if(woodenTexture!=null){
+            BitmapDrawable d=new BitmapDrawable(getResources(),woodenTexture);
+            d.setGravity(Gravity.FILL);
+            return d;
+        }
+        return bg(Color.rgb(226,177,107),18,GOLD);
     }
     private void addAction(LinearLayout parent,String title,int color,boolean light,Runnable run){
         TextView a=action(title,color,light,run);
         LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1);
         p.setMargins(dp(3),dp(3),dp(3),dp(3));parent.addView(a,p);
     }
-    private void shell(String title,String subtitle) {
-        root=col();root.setBackgroundColor(BG);
-        ScrollView sc=new ScrollView(this);sc.setFillViewport(true);
+    private void shell(String title,String subtitle){
+        // Background and touchable controls are separate layers.
+        root=new FrameLayout(this);
+        sceneView=new SceneBackgroundView(this,screen==HOME);
+        sceneView.setMotionEnabled(sceneMotion);
+        root.addView(sceneView,new FrameLayout.LayoutParams(-1,-1));
+        ScrollView sc=new ScrollView(this);
+        sc.setFillViewport(true);
         sc.setClipToPadding(false);
-        root.setPadding(dp(14),dp(10),dp(14),dp(8));
+        sc.setBackgroundColor(Color.TRANSPARENT);
+        sc.setPadding(dp(10),dp(4),dp(10),dp(6));
+        root.addView(sc,new FrameLayout.LayoutParams(-1,-1));
         setContentView(root);
-        root.addView(sc,new LinearLayout.LayoutParams(-1,0,1));
-        LinearLayout body=col();body.setPadding(dp(2),dp(2),dp(2),dp(12));sc.addView(body);
-        LinearLayout heading=col();heading.setPadding(dp(18),dp(17),dp(18),dp(16));
-        heading.setBackground(gradient(DARK,JADE,22));
-        add(heading,label(title,27,Color.rgb(244,226,177),true),3);
-        add(heading,label(subtitle,12,Color.rgb(213,232,219),false),0);
-        add(body,heading,12);
+        LinearLayout body=col();
+        body.setPadding(dp(2),dp(4),dp(2),dp(12));
+        sc.addView(body);
+        LinearLayout heading=col();
+        heading.setPadding(dp(14),dp(11),dp(14),dp(10));
+        heading.setBackground(bg(Color.argb(215,16,57,43),14,GOLD));
+        add(heading,label(title,20,Color.rgb(251,223,168),true),1);
+        add(heading,label(subtitle,11,Color.rgb(229,235,207),false),0);
+        add(body,heading,7);
         content=body;
     }
     private LinearLayout content;
     private void block(String title,String desc,Runnable onClick){
-        LinearLayout card=col();card.setPadding(dp(20),dp(16),dp(18),dp(17));
-        card.setBackground(bg(Color.WHITE,18,Color.rgb(217,227,215)));
-        add(card,label(title,19,JADE,true),5);
-        add(card,label(desc,13,Color.rgb(91,105,99),false),0);
+        LinearLayout card=col();
+        card.setPadding(dp(20),dp(13),dp(18),dp(14));
+        card.setBackground(woodButton());
+        add(card,label(title,19,Color.rgb(95,53,27),true),0);
+        add(card,label(desc,11,Color.rgb(109,69,39),false),0);
         card.setOnClickListener(v->onClick.run());
-        add(content,card,10);
+        add(content,card,5);
     }
     private void cancelAnimations(){
         if(boardView!=null)boardView.cancelMoveAnimation();
@@ -129,14 +164,16 @@ public final class MainActivity extends Activity {
     private void home(){
         ++serial;cancelAnimations();
         clockStamp=SystemClock.elapsedRealtime();screen=HOME;thinking=false;hintThinking=false;
-        shell("玉弈象棋 · 大厅","国风棋馆 · 单机挑战 · AI 陪练");
+        shell("玉弈象棋","竹窗茶室 · 人机对弈 · 棋谱复盘");
+        // Leave part of the round garden window visible above the interactive entries.
+        gap(content,110);
         LinearLayout banner=col();
         banner.setPadding(dp(18),dp(20),dp(18),dp(20));
-        banner.setBackground(gradient(Color.rgb(18,71,58),Color.rgb(51,126,94),20));
+        banner.setBackground(bg(Color.argb(215,20,70,53),18,GOLD));
         add(banner,label("♜  今日来一局",24,Color.rgb(246,225,171),true),6);
         add(banner,label("经典象棋 · 人机挑战 · 棋谱复盘",13,Color.WHITE,false),0);
         add(content,banner,12);
-        add(content,label("对局时限",16,DARK,true),5);
+        add(content,label("对局时限",16,Color.rgb(254,232,175),true),5);
         LinearLayout timeRow=row();
         for(final int minutes:new int[]{5,10,15}) {
             addAction(timeRow,minutes+" 分钟",
@@ -144,7 +181,7 @@ public final class MainActivity extends Activity {
                 minutes==timeControlMinutes,()->{timeControlMinutes=minutes;home();});
         }
         add(content,timeRow,10);
-        add(content,label("开始对弈",18,DARK,true),9);
+        add(content,label("开始对弈",18,Color.rgb(254,232,175),true),9);
         block("♟  快速人机 · 执红","红方先手 · "+timeControlMinutes+"分钟场 · 三档难度",()->newGame(MODE_HUMAN_AI,XiangqiGame.RED));
         block("♟  快速人机 · 执黑","黑方后手 · 棋盘自动翻转 · AI 先行",()->newGame(MODE_HUMAN_AI,XiangqiGame.BLACK));
         block("♜  双 AI 观战","自动走棋 · 调整速度 · 支持暂停",()->newGame(MODE_AI_AI,XiangqiGame.RED));
@@ -154,7 +191,7 @@ public final class MainActivity extends Activity {
         if(prefs.contains("moves")&&(!prefs.getString("moves","").isEmpty())) {
             block("↺  继续上次对局","自动保存了走子记录，可以接着下",()->{load();autoPlaying=mode==MODE_AI_AI;screen=GAME;renderGame();scheduleAi();});
         }
-        add(content,label("当前包含四关入门训练。更完整的残局库、棋力评测与真人联网大厅以后逐步加入。当前使用 Java CPU AI。",12,Color.rgb(113,126,118),false),12);
+        add(content,label("单机版 · 四关入门训练 · Java CPU AI",12,Color.rgb(245,221,173),false),12);
     }
     private void newGame(int newMode,int newHumanSide){
         ++serial;cancelAnimations();game=new XiangqiGame();selected=-1;hintFrom=-1;hintTo=-1;
@@ -208,18 +245,18 @@ public final class MainActivity extends Activity {
         String modeText=mode==MODE_AI_AI?"AI × AI 自动对弈":mode==MODE_TWO_HUMANS?"双人同屏":(humanSide==XiangqiGame.RED?"你执红方":"你执黑方");
         shell("玉弈 · 对弈",modeText+"  |  内置 CPU AI");
         LinearLayout info=row();info.setPadding(dp(13),dp(12),dp(13),dp(12));
-        info.setBackground(bg(Color.WHITE,15,Color.rgb(219,229,217)));
+        info.setBackground(bg(Color.argb(219,18,63,48),15,GOLD));
         String turn=game.turn==XiangqiGame.RED?"红方":"黑方";
         String text=isGameFinished()?(( (timedWinner!=0?timedWinner:game.winner())==XiangqiGame.RED?"红方":"黑方")+"获胜"+(timedWinner!=0?" · 超时":"")):
             (turn+"行棋"+(game.inCheck(game.turn)?" · 将军！":"")+(thinking?" · AI 思考中…":""));
-        TextView status=label(text,16,JADE,true);info.addView(status,new LinearLayout.LayoutParams(0,-2,1));
-        info.addView(label("第 "+(game.history.size()/2+1)+" 回合",12,Color.GRAY,false));
+        TextView status=label(text,16,Color.rgb(245,225,177),true);info.addView(status,new LinearLayout.LayoutParams(0,-2,1));
+        info.addView(label("第 "+(game.history.size()/2+1)+" 回合",12,Color.rgb(242,219,176),false));
         add(content,info,7);
         LinearLayout players=row();
         players.setPadding(dp(10),dp(11),dp(10),dp(11));
-        players.setBackground(bg(Color.rgb(229,237,226),14,Color.rgb(208,223,204)));
-        redTimeView=label("",16,Color.rgb(173,59,52),true);
-        blackTimeView=label("",16,JADE,true);
+        players.setBackground(bg(Color.argb(211,16,64,49),14,GOLD));
+        redTimeView=label("",16,Color.rgb(251,191,145),true);
+        blackTimeView=label("",16,Color.rgb(243,224,167),true);
         redTimeView.setGravity(Gravity.CENTER);
         blackTimeView.setGravity(Gravity.CENTER);
         players.addView(redTimeView,new LinearLayout.LayoutParams(0,dp(32),1));
@@ -239,7 +276,12 @@ public final class MainActivity extends Activity {
         addAction(row1,"棋谱复盘",Color.WHITE,false,this::replay);
         add(content,row1,4);
         LinearLayout row2=row();
-        addAction(row2,"新开一局",JADE,true,this::home);
+        addAction(row2,sceneMotion?"动效：开":"动效：关",JADE,true,()->{
+            sceneMotion=!sceneMotion;
+            getSharedPreferences(PREFS,MODE_PRIVATE).edit().putBoolean("sceneMotion",sceneMotion).apply();
+            if(sceneView!=null)sceneView.setMotionEnabled(sceneMotion);
+            renderGame();
+        });
         addAction(row2,"棋力："+(level==1?"入门":level==2?"普通":"较强"),Color.WHITE,false,()->{
             if(animating)return;
             level=level==3?1:level+1;persist();renderGame();
@@ -257,7 +299,7 @@ public final class MainActivity extends Activity {
             add(content,auto,4);
         }
         String note=hintThinking?"AI 正在分析…":hintFrom>=0?"提示：蓝色标记为建议走法。":"点己方棋子，再点目标位置即可落子。绿点表示合法位置。";
-        add(content,label(note,12,Color.rgb(102,120,108),false),8);
+        add(content,label(note,12,Color.rgb(249,224,166),false),8);
     }
     private void squareTapped(int sq){
         if(animating||thinking||isGameFinished()||isAiTurn()||mode==MODE_AI_AI)return;
