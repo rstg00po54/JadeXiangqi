@@ -1,0 +1,279 @@
+{
+  "name": "JadeXiangqi UI Asset Pack",
+  "version": "1.0",
+  "source": "AI-generated concept artwork plus programmatically separated / validated chess assets",
+  "files": [
+    {
+      "path": "backgrounds/lobby_background_1080x1920.png",
+      "size": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "backgrounds/scene_background_1080x1920.png",
+      "size": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "boards/board_blank_1024x1160.png",
+      "size": [
+        1024,
+        1160
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "boards/board_grid_1024x1160.png",
+      "size": [
+        1024,
+        1160
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/button_analysis_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/button_emoji_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/button_hint_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/button_menu_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/button_puzzle_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/button_replay_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/button_settings_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "buttons/button_undo_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "decorations/avatar_frame_cat.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "decorations/avatar_frame_hero.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "decorations/timer_blue.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "decorations/timer_gold.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/legal_target_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_black_advisor_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_black_cannon_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_black_elephant_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_black_general_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_black_horse_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_black_rook_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_black_soldier_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_blank_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_red_advisor_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_red_cannon_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_red_elephant_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_red_general_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_red_horse_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_red_rook_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/piece_red_soldier_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "pieces/selection_ring_256.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "preview/asset_preview.png",
+      "size": [
+        1600,
+        1800
+      ],
+      "mode": "RGB"
+    }
+  ]
+}
