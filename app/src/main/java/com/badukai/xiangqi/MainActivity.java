@@ -28,10 +28,10 @@ public final class MainActivity extends Activity {
     private static final int JADE=Color.rgb(19,79,65), DARK=Color.rgb(16,59,49);
     private static final int GOLD=Color.rgb(200,157,84), BG=Color.rgb(243,246,238);
     private static final int MODE_HUMAN_AI=0, MODE_AI_AI=1, MODE_TWO_HUMANS=2;
-    private static final int HOME=0, GAME=1, REPLAY=2;
+    private static final int HOME=0, GAME=1, REPLAY=2, PUZZLE=3;
     private static final String PREFS="xiangqi_v1";
     private int screen=HOME,mode=MODE_HUMAN_AI,humanSide=XiangqiGame.RED,level=2,serial=0;
-    private int selected=-1,hintFrom=-1,hintTo=-1,replayIndex=0;
+    private int selected=-1,hintFrom=-1,hintTo=-1,replayIndex=0,puzzleIndex=0,puzzleSelected=-1;
     private boolean thinking=false,hintThinking=false,fastAi=false,autoPlaying=false,animating=false;
     private int timeControlMinutes=10,timedWinner=0;
     private long redRemainingMs=600000,blackRemainingMs=600000,clockStamp;
@@ -46,7 +46,9 @@ public final class MainActivity extends Activity {
     private XiangqiGame game=new XiangqiGame();
     private LinearLayout root;
     private BoardView boardView;
-    private BoardView replayBoard;
+    private BoardView replayBoard,puzzleBoard;
+    private XiangqiGame puzzleGame;
+    private boolean puzzlePassed=false;
     private final Handler handler=new Handler(Looper.getMainLooper());
 
     @Override public void onCreate(Bundle saved) {
@@ -121,6 +123,7 @@ public final class MainActivity extends Activity {
     private void cancelAnimations(){
         if(boardView!=null)boardView.cancelMoveAnimation();
         if(replayBoard!=null)replayBoard.cancelMoveAnimation();
+        if(puzzleBoard!=null)puzzleBoard.cancelMoveAnimation();
         animating=false;
     }
     private void home(){
@@ -146,11 +149,12 @@ public final class MainActivity extends Activity {
         block("♟  快速人机 · 执黑","黑方后手 · 棋盘自动翻转 · AI 先行",()->newGame(MODE_HUMAN_AI,XiangqiGame.BLACK));
         block("♜  双 AI 观战","自动走棋 · 调整速度 · 支持暂停",()->newGame(MODE_AI_AI,XiangqiGame.RED));
         block("♞  双人同屏","本地两人对弈 · "+timeControlMinutes+"分钟场",()->newGame(MODE_TWO_HUMANS,XiangqiGame.RED));
+        block("♙  残局入门 · 一步将军","四个原创入门小关卡 · 车、炮、马、兵",()->startPuzzle(0));
         SharedPreferences prefs=getSharedPreferences(PREFS,MODE_PRIVATE);
         if(prefs.contains("moves")&&(!prefs.getString("moves","").isEmpty())) {
             block("↺  继续上次对局","自动保存了走子记录，可以接着下",()->{load();autoPlaying=mode==MODE_AI_AI;screen=GAME;renderGame();scheduleAi();});
         }
-        add(content,label("残局闯关、棋力评测与真人联网大厅将分阶段加入。当前版本使用内置 Java CPU AI，不使用 GPU/NPU。",12,Color.rgb(113,126,118),false),12);
+        add(content,label("当前包含四关入门训练。更完整的残局库、棋力评测与真人联网大厅以后逐步加入。当前使用 Java CPU AI。",12,Color.rgb(113,126,118),false),12);
     }
     private void newGame(int newMode,int newHumanSide){
         ++serial;cancelAnimations();game=new XiangqiGame();selected=-1;hintFrom=-1;hintTo=-1;
@@ -401,12 +405,77 @@ public final class MainActivity extends Activity {
             animating=false;renderReplay();
         });
     }
+    private void startPuzzle(int level){
+        ++serial;cancelAnimations();
+        puzzleIndex=level;puzzleGame=PuzzleBook.position(level);
+        puzzleSelected=-1;puzzlePassed=false;
+        renderPuzzle();
+    }
+    private void renderPuzzle(){
+        screen=PUZZLE;
+        shell("残局入门 · 第"+(puzzleIndex+1)+"关","一步将军训练 · "+PuzzleBook.TITLES[puzzleIndex]);
+        add(content,label("目标：红方走一步，给黑方将军。",16,JADE,true),7);
+        puzzleBoard=new BoardView(this);
+        puzzleBoard.bind(puzzleGame);
+        puzzleBoard.setSelected(puzzleSelected);
+        puzzleBoard.setAllowMoves(!animating&&!puzzlePassed);
+        puzzleBoard.onSquareClick(this::puzzleSquareTapped);
+        add(content,puzzleBoard,10);
+        if(puzzlePassed){
+            add(content,label("★ 挑战成功！",19,Color.rgb(27,125,85),true),10);
+            LinearLayout controls=row();
+            addAction(controls,"再来一次",Color.WHITE,false,()->startPuzzle(puzzleIndex));
+            addAction(controls,puzzleIndex==PuzzleBook.TITLES.length-1?"回大厅":"下一关",JADE,true,
+                ()->{if(puzzleIndex+1<PuzzleBook.TITLES.length)startPuzzle(puzzleIndex+1);else home();});
+            add(content,controls,8);
+        }else{
+            LinearLayout actions=row();
+            addAction(actions,"走法提示",Color.WHITE,false,()->{
+                if(animating)return;
+                puzzleBoard.setHint(PuzzleBook.FROM[puzzleIndex],PuzzleBook.TO[puzzleIndex]);
+                toast(PuzzleBook.TIPS[puzzleIndex]);
+            });
+            addAction(actions,"重新摆棋",Color.WHITE,false,()->startPuzzle(puzzleIndex));
+            add(content,actions,8);
+        }
+        LinearLayout nav=row();
+        addAction(nav,"返回大厅",Color.rgb(219,229,219),false,this::home);
+        add(content,nav,5);
+        add(content,label("本关只考一步将军，暂不涉及连续杀法。",12,Color.GRAY,false),5);
+    }
+    private void puzzleSquareTapped(int sq){
+        if(screen!=PUZZLE||animating||puzzlePassed)return;
+        if(puzzleSelected<0){
+            if(XiangqiGame.color(puzzleGame.board[sq])==XiangqiGame.RED){
+                puzzleSelected=sq;puzzleBoard.setSelected(sq);
+            }
+            return;
+        }
+        if(puzzleSelected==sq){puzzleSelected=-1;puzzleBoard.setSelected(-1);return;}
+        if(XiangqiGame.color(puzzleGame.board[sq])==XiangqiGame.RED){
+            puzzleSelected=sq;puzzleBoard.setSelected(sq);return;
+        }
+        if(!PuzzleBook.isSolution(puzzleIndex,puzzleSelected,sq)){
+            toast("再想一想，要一步将军。");return;
+        }
+        XiangqiGame.Move move=puzzleGame.move(puzzleSelected,sq);
+        if(move==null){toast("走法不合法");return;}
+        puzzleSelected=-1;animating=true;
+        puzzleBoard.setSelected(-1);puzzleBoard.setHint(-1,-1);
+        int ticket=serial;
+        puzzleBoard.animateMove(move,false,()->{
+            if(screen!=PUZZLE||ticket!=serial)return;
+            puzzlePassed=puzzleGame.inCheck(XiangqiGame.BLACK);
+            animating=false;renderPuzzle();
+        });
+    }
     private void copyMoves(){
         ClipboardManager clipboard=(ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
         if(clipboard!=null){clipboard.setPrimaryClip(ClipData.newPlainText("xiangqi moves",game.exportMoves()));toast("棋谱已复制");}
     }
     @Override public void onBackPressed(){
         if(screen==REPLAY){++serial;cancelAnimations();renderGame();scheduleAi();}
+        else if(screen==PUZZLE)home();
         else if(screen==GAME)home();
         else super.onBackPressed();
     }
