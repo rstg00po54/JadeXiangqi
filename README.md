@@ -15,6 +15,14 @@
 - 参考传统象棋游戏大厅的单机主页，提供 5/10/15 分钟对局、红黑双方倒计时
 - 四关原创“一步将军”入门训练（车、炮、马、兵），可提示、重试及进入下一关
 
+## 竖屏 UI 与场景动画
+
+- 首页使用 `app/src/main/assets/ui_tearoom_x300pro/backgrounds/tea_room_lobby_background_1260x2800.png`，基准比例 9:20；其他比例居中裁切，不拉伸。
+- 对局和残局使用 `app/src/main/assets/ui/backgrounds/scene_background_1080x1920.png` 夜景庭院；棋盘使用 `ui_tearoom_x300pro/boards/board_warm_stone_1024x1190.png`，棋子使用相同素材包中的红黑独立透明 PNG。
+- `SceneBackgroundView` 是独立于触摸控件的 Canvas 动效层，有低频灯火光晕、漂浮光点、飘叶及轻微背景平移；进入后台或离开场景会取消计时器，目标最大约 30fps。
+- 对局页提供“动效：开/关”，自动保存设置；关闭动效时背景保持静态。棋子移动、吃子淡出、撤销和复盘由 `BoardView` 单独处理。
+- 本项目的动效是原创实现，不包含 JJ 游戏的动画或美术文件。
+
 ## 构建
 
 Android Studio 打开项目，Build > Build APK(s)。
