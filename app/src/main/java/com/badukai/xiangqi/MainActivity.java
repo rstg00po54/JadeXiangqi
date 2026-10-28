@@ -15,6 +15,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import java.io.InputStream;
 import java.io.IOException;
 import android.graphics.Typeface;
@@ -161,37 +162,197 @@ public final class MainActivity extends Activity {
         if(puzzleBoard!=null)puzzleBoard.cancelMoveAnimation();
         animating=false;
     }
+
+    // Home page uses the 1260×2800 asset manifest as a design coordinate system.
+    // Each element is a real View, so labels, selections and navigation remain interactive.
+    private final java.util.HashMap<String,Bitmap> homeBitmapCache=new java.util.HashMap<>();
+    private Bitmap homeBitmap(String relativePath){
+        String path="ui/home/"+relativePath;
+        Bitmap cached=homeBitmapCache.get(path);
+        if(cached!=null&&!cached.isRecycled())return cached;
+        try(InputStream stream=getAssets().open(path)){
+            BitmapFactory.Options options=new BitmapFactory.Options();
+            options.inScaled=false;
+            Bitmap bitmap=BitmapFactory.decodeStream(stream,null,options);
+            if(bitmap!=null)homeBitmapCache.put(path,bitmap);
+            return bitmap;
+        }catch(IOException e){return null;}
+    }
+    private ImageView homeImage(String path,String accessibilityLabel,Runnable onTap){
+        ImageView view=new ImageView(this);
+        Bitmap bitmap=homeBitmap(path);
+        if(bitmap!=null)view.setImageBitmap(bitmap);
+        view.setScaleType(ImageView.ScaleType.FIT_XY);
+        if(onTap!=null){
+            view.setClickable(true);
+            view.setContentDescription(accessibilityLabel);
+            view.setOnClickListener(v->onTap.run());
+        }else{
+            view.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        }
+        return view;
+    }
+    private TextView homeText(String value,int sizePx,int color,boolean bold,int alignment){
+        TextView view=label(value,12,color,bold);
+        float scale=getResources().getDisplayMetrics().widthPixels/1260f;
+        view.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,sizePx*scale);
+        view.setGravity(alignment);
+        view.setIncludeFontPadding(false);
+        if(bold)view.setShadowLayer(dp(1),0,dp(1),Color.argb(75,45,27,12));
+        return view;
+    }
+    private static final class HomeSlot{
+        final View view;
+        final int x,y,w,h;
+        HomeSlot(View view,int x,int y,int w,int h){
+            this.view=view;this.x=x;this.y=y;this.w=w;this.h=h;
+        }
+    }
+    private final class HomeLayout extends FrameLayout{
+        private final java.util.ArrayList<HomeSlot> slots=new java.util.ArrayList<>();
+        HomeLayout(){super(MainActivity.this);setClipChildren(false);}
+        void place(View view,int x,int y,int w,int h){
+            addView(view,new FrameLayout.LayoutParams(1,1));
+            slots.add(new HomeSlot(view,x,y,w,h));
+        }
+        @Override protected void onMeasure(int widthSpec,int heightSpec){
+            int width=MeasureSpec.getSize(widthSpec);
+            int height=MeasureSpec.getSize(heightSpec);
+            float sx=width/1260f,sy=height/2800f;
+            for(HomeSlot slot:slots){
+                FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)slot.view.getLayoutParams();
+                p.width=Math.max(1,Math.round(slot.w*sx));
+                p.height=Math.max(1,Math.round(slot.h*sy));
+                p.leftMargin=Math.round(slot.x*sx);
+                p.topMargin=Math.round(slot.y*sy);
+            }
+            super.onMeasure(widthSpec,heightSpec);
+        }
+    }
     private void home(){
         ++serial;cancelAnimations();
-        clockStamp=SystemClock.elapsedRealtime();screen=HOME;thinking=false;hintThinking=false;
-        shell("玉弈象棋","竹窗茶室 · 人机对弈 · 棋谱复盘");
-        // Leave part of the round garden window visible above the interactive entries.
-        gap(content,110);
-        LinearLayout banner=col();
-        banner.setPadding(dp(18),dp(20),dp(18),dp(20));
-        banner.setBackground(bg(Color.argb(215,20,70,53),18,GOLD));
-        add(banner,label("♜  今日来一局",24,Color.rgb(246,225,171),true),6);
-        add(banner,label("经典象棋 · 人机挑战 · 棋谱复盘",13,Color.WHITE,false),0);
-        add(content,banner,12);
-        add(content,label("对局时限",16,Color.rgb(254,232,175),true),5);
-        LinearLayout timeRow=row();
-        for(final int minutes:new int[]{5,10,15}) {
-            addAction(timeRow,minutes+" 分钟",
-                minutes==timeControlMinutes?JADE:Color.WHITE,
-                minutes==timeControlMinutes,()->{timeControlMinutes=minutes;home();});
+        clockStamp=SystemClock.elapsedRealtime();screen=HOME;
+        thinking=false;hintThinking=false;
+        redTimeView=null;blackTimeView=null;
+        getWindow().setStatusBarColor(Color.rgb(7,51,42));
+        getWindow().setNavigationBarColor(Color.rgb(7,51,42));
+        HomeLayout layout=new HomeLayout();
+        root=layout;
+        sceneView=null;
+        layout.setBackgroundColor(DARK);
+        layout.place(homeImage("backgrounds/lobby_background.png","",null),0,0,1260,2800);
+
+        // Title panel.
+        layout.place(homeImage("panels/panel_title.png","",null),45,173,1170,285);
+        layout.place(homeText("玉弈象棋",77,Color.rgb(250,225,171),true,Gravity.CENTER_VERTICAL),
+                108,218,1040,111);
+        layout.place(homeText("竹窗茶室 · 人机对弈 · 棋谱复盘",42,
+                Color.rgb(236,224,189),false,Gravity.CENTER_VERTICAL),110,334,1060,76);
+
+        // Daily-play information panel.
+        layout.place(homeImage("panels/panel_today.png","",null),58,990,1145,347);
+        layout.place(homeText("♜  今日来一局",78,Color.rgb(251,228,174),true,
+                Gravity.CENTER_VERTICAL),114,1044,1050,120);
+        layout.place(homeText("经典象棋 · 人机挑战 · 棋谱复盘",43,
+                Color.rgb(242,231,201),false,Gravity.CENTER_VERTICAL),120,1190,1050,74);
+
+        layout.place(homeText("对局时限",58,Color.rgb(250,228,177),true,
+                Gravity.CENTER_VERTICAL),70,1352,600,94);
+        final int[] minutesList={5,10,15};
+        final int[] timeX={70,454,843};
+        for(int i=0;i<minutesList.length;i++){
+            final int minutes=minutesList[i];
+            String image=minutes==timeControlMinutes?"buttons/time_selected.png":
+                    "buttons/time_"+minutes+"min.png";
+            layout.place(homeImage(image,minutes+"分钟",()->{
+                if(timeControlMinutes!=minutes){timeControlMinutes=minutes;home();}
+            }),timeX[i],1468,356,160);
+            layout.place(homeText(minutes+"分钟",54,Color.rgb(253,238,195),true,
+                    Gravity.CENTER),timeX[i]+12,1485,332,126);
         }
-        add(content,timeRow,10);
-        add(content,label("开始对弈",18,Color.rgb(254,232,175),true),9);
-        block("♟  快速人机 · 执红","红方先手 · "+timeControlMinutes+"分钟场 · 三档难度",()->newGame(MODE_HUMAN_AI,XiangqiGame.RED));
-        block("♟  快速人机 · 执黑","黑方后手 · 棋盘自动翻转 · AI 先行",()->newGame(MODE_HUMAN_AI,XiangqiGame.BLACK));
-        block("♜  双 AI 观战","自动走棋 · 调整速度 · 支持暂停",()->newGame(MODE_AI_AI,XiangqiGame.RED));
-        block("♞  双人同屏","本地两人对弈 · "+timeControlMinutes+"分钟场",()->newGame(MODE_TWO_HUMANS,XiangqiGame.RED));
-        block("♙  残局入门 · 一步将军","四个原创入门小关卡 · 车、炮、马、兵",()->startPuzzle(0));
-        SharedPreferences prefs=getSharedPreferences(PREFS,MODE_PRIVATE);
-        if(prefs.contains("moves")&&(!prefs.getString("moves","").isEmpty())) {
-            block("↺  继续上次对局","自动保存了走子记录，可以接着下",()->{load();autoPlaying=mode==MODE_AI_AI;screen=GAME;renderGame();scheduleAi();});
+
+        layout.place(homeText("开始对弈",58,Color.rgb(252,231,177),true,
+                Gravity.CENTER_VERTICAL),70,1650,700,90);
+        addHomeMode(layout,"buttons/button_mode_red.png",
+                "快速人机 · 执红","红方先手 · "+timeControlMinutes+"分钟场 · 三档难度",
+                1759,()->newGame(MODE_HUMAN_AI,XiangqiGame.RED));
+        addHomeMode(layout,"buttons/button_mode_black.png",
+                "快速人机 · 执黑","黑方后手 · 棋盘自动翻转 · AI 先行",
+                2005,()->newGame(MODE_HUMAN_AI,XiangqiGame.BLACK));
+        addHomeMode(layout,"buttons/button_mode_ai.png",
+                "双 AI 观战","自动走棋 · 调整速度 · 支持暂停",
+                2251,()->newGame(MODE_AI_AI,XiangqiGame.RED));
+
+        // Bottom navigation is anchored at the bottom of the design frame.
+        layout.place(homeImage("navigation/nav_background.png","",null),0,2554,1260,246);
+        layout.place(homeImage("navigation/nav_selected_background.png","",null),
+                39,2562,238,225);
+        String[] navNames={"home","match","record","settings"};
+        String[] navLabels={"首页","对弈","棋谱","设置"};
+        int[] navX={92,400,711,1020};
+        Runnable[] handlers={
+            ()->{},
+            ()->newGame(MODE_HUMAN_AI,XiangqiGame.RED),
+            this::replay,
+            this::homeSettings
+        };
+        for(int i=0;i<navNames.length;i++){
+            final int idx=i;
+            String path="icons/nav_"+navNames[i]+(i==0?"_selected":"_normal")+".png";
+            layout.place(homeImage(path,"",null),navX[i]+44,2600,112,112);
+            layout.place(homeText(navLabels[i],48,Color.rgb(244,218,160),
+                    i==0,Gravity.CENTER),navX[i]-8,2716,216,62);
+            View tap=new View(this);
+            tap.setClickable(true);
+            tap.setContentDescription(navLabels[i]);
+            tap.setOnClickListener(v->handlers[idx].run());
+            layout.place(tap,navX[i]-22,2572,244,220);
         }
-        add(content,label("单机版 · 四关入门训练 · Java CPU AI",12,Color.rgb(245,221,173),false),12);
+        setContentView(layout);
+    }
+    private void addHomeMode(HomeLayout layout,String asset,String title,
+                             String detail,int top,Runnable action){
+        layout.place(homeImage(asset,title,action),61,top,1140,216);
+        layout.place(homeText(title,69,Color.rgb(100,53,24),true,
+                Gravity.CENTER_VERTICAL),255,top+31,910,85);
+        layout.place(homeText(detail,40,Color.rgb(127,79,46),false,
+                Gravity.CENTER_VERTICAL),258,top+118,910,66);
+    }
+    private void homeSettings(){
+        String[] choices={
+            "棋力："+(level==1?"入门":level==2?"普通":"较强")+"（点击切换）",
+            "场景动效："+(sceneMotion?"开启":"关闭")+"（点击切换）",
+            "双人同屏对弈",
+            "残局入门训练",
+            "继续上次对局"
+        };
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("设置与更多玩法")
+            .setItems(choices,(dialog,which)->{
+                switch(which){
+                    case 0:
+                        level=level==3?1:level+1;
+                        persist();toast("棋力已切换");
+                        break;
+                    case 1:
+                        sceneMotion=!sceneMotion;
+                        getSharedPreferences(PREFS,MODE_PRIVATE).edit()
+                            .putBoolean("sceneMotion",sceneMotion).apply();
+                        toast(sceneMotion?"场景动效已开启":"场景动效已关闭");
+                        break;
+                    case 2:newGame(MODE_TWO_HUMANS,XiangqiGame.RED);break;
+                    case 3:startPuzzle(0);break;
+                    case 4:
+                        if(getSharedPreferences(PREFS,MODE_PRIVATE).getString("moves","").isEmpty()){
+                            toast("暂无可继续的对局");
+                        }else{
+                            load();autoPlaying=mode==MODE_AI_AI;
+                            screen=GAME;renderGame();scheduleAi();
+                        }
+                        break;
+                    default:break;
+                }
+            }).setNegativeButton("关闭",null).show();
     }
     private void newGame(int newMode,int newHumanSide){
         ++serial;cancelAnimations();game=new XiangqiGame();selected=-1;hintFrom=-1;hintTo=-1;
