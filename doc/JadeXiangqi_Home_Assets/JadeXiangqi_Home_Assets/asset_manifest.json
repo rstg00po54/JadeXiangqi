@@ -1,0 +1,118 @@
+{
+  "targetCanvas": {
+    "width": 1260,
+    "height": 2800
+  },
+  "backgroundAsset": "backgrounds/lobby_background.png",
+  "textNotBakedInAssets": true,
+  "assets": {
+    "titlePanel": {
+      "path": "panels/panel_title.png",
+      "bounds": [
+        45,
+        173,
+        1170,
+        285
+      ]
+    },
+    "todayPanel": {
+      "path": "panels/panel_today.png",
+      "bounds": [
+        58,
+        990,
+        1145,
+        347
+      ]
+    },
+    "timeButtons": [
+      {
+        "path": "buttons/time_5min.png",
+        "bounds": [
+          70,
+          1468,
+          356,
+          160
+        ]
+      },
+      {
+        "path": "buttons/time_10min.png",
+        "bounds": [
+          454,
+          1468,
+          356,
+          160
+        ]
+      },
+      {
+        "path": "buttons/time_15min.png",
+        "bounds": [
+          843,
+          1468,
+          356,
+          160
+        ]
+      }
+    ],
+    "modeButtons": [
+      {
+        "path": "buttons/button_mode_red.png",
+        "bounds": [
+          61,
+          1759,
+          1140,
+          216
+        ]
+      },
+      {
+        "path": "buttons/button_mode_black.png",
+        "bounds": [
+          61,
+          2005,
+          1140,
+          216
+        ]
+      },
+      {
+        "path": "buttons/button_mode_ai.png",
+        "bounds": [
+          61,
+          2251,
+          1140,
+          216
+        ]
+      }
+    ],
+    "navBackground": {
+      "path": "navigation/nav_background.png",
+      "bounds": [
+        0,
+        2554,
+        1260,
+        246
+      ]
+    },
+    "navSelectedBackground": {
+      "path": "navigation/nav_selected_background.png",
+      "bounds": [
+        39,
+        2562,
+        238,
+        225
+      ]
+    },
+    "navIcons": {
+      "names": [
+        "home",
+        "match",
+        "record",
+        "settings"
+      ],
+      "size": [
+        128,
+        128
+      ]
+    }
+  },
+  "preview": "preview/home_preview_1260x2800.png",
+  "authoringNote": "All panel/button/nav/icon PNGs support transparency and do not contain text. Drawable resources can be resized, but prefer keep-aspect or 9-slice stretching; labels are drawn at runtime."
+}
