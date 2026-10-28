@@ -283,30 +283,32 @@ public final class MainActivity extends Activity {
                 "双 AI 观战","自动走棋 · 调整速度 · 支持暂停",
                 2251,()->newGame(MODE_AI_AI,XiangqiGame.RED));
 
-        // Bottom navigation is anchored at the bottom of the design frame.
-        layout.place(homeImage("navigation/nav_background.png","",null),0,2554,1260,246);
+        // Go-style navigation v2: slim bar, five evenly aligned tabs and a light selected halo.
+        // PNGs live in ui/home/navigation and ui/home/icons.
+        layout.place(homeImage("navigation/nav_background.png","",null),0,2612,1260,188);
         layout.place(homeImage("navigation/nav_selected_background.png","",null),
-                39,2562,238,225);
-        String[] navNames={"home","match","record","settings"};
-        String[] navLabels={"首页","对弈","棋谱","设置"};
-        int[] navX={92,400,711,1020};
+                12,2612,228,188);
+        String[] navNames={"home","match","record","training","settings"};
+        String[] navLabels={"首页","对弈","棋谱","训练","设置"};
+        int[] navX={0,252,504,756,1008};
         Runnable[] handlers={
             ()->{},
             ()->newGame(MODE_HUMAN_AI,XiangqiGame.RED),
             this::replay,
+            ()->startPuzzle(0),
             this::homeSettings
         };
         for(int i=0;i<navNames.length;i++){
             final int idx=i;
-            String path="icons/nav_"+navNames[i]+(i==0?"_selected":"_normal")+".png";
-            layout.place(homeImage(path,"",null),navX[i]+44,2600,112,112);
-            layout.place(homeText(navLabels[i],48,Color.rgb(244,218,160),
-                    i==0,Gravity.CENTER),navX[i]-8,2716,216,62);
-            View tap=new View(this);
-            tap.setClickable(true);
-            tap.setContentDescription(navLabels[i]);
-            tap.setOnClickListener(v->handlers[idx].run());
-            layout.place(tap,navX[i]-22,2572,244,220);
+            String icon="icons/nav_"+navNames[i]+(i==0?"_selected":"_normal")+".png";
+            layout.place(homeImage(icon,"",null),navX[i]+64,2614,124,124);
+            layout.place(homeText(navLabels[i],43,Color.rgb(239,217,171),
+                    i==0,Gravity.CENTER),navX[i]+18,2733,216,51);
+            View tab=new View(this);
+            tab.setClickable(true);
+            tab.setContentDescription(navLabels[i]);
+            tab.setOnClickListener(v->handlers[idx].run());
+            layout.place(tab,navX[i],2612,252,188);
         }
         setContentView(layout);
     }
