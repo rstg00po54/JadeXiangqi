@@ -302,7 +302,8 @@ public final class MainActivity extends Activity {
             final int idx=i;
             String icon="icons/nav_"+navNames[i]+(i==0?"_selected":"_normal")+".png";
             layout.place(homeImage(icon,"",null),navX[i]+64,2614,124,124);
-            layout.place(homeText(navLabels[i],43,Color.rgb(239,217,171),
+            layout.place(homeText(navLabels[i],43,
+                    i==0?Color.rgb(255,215,126):Color.rgb(219,225,209),
                     i==0,Gravity.CENTER),navX[i]+18,2733,216,51);
             View tab=new View(this);
             tab.setClickable(true);
