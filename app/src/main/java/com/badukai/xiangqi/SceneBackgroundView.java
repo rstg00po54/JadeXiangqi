@@ -23,9 +23,9 @@ import java.io.InputStream;
  */
 public final class SceneBackgroundView extends View {
     private static final String HOME_IMAGE =
-        "ui_tearoom_x300pro/backgrounds/tea_room_lobby_background_1260x2800.png";
+        "ui/home/backgrounds/lobby_background.png";
     private static final String GAME_IMAGE =
-        "ui/backgrounds/scene_background_1080x1920.png";
+        "ui_tearoom_x300pro/backgrounds/tea_room_lobby_background_1260x2800.png";
     private static Bitmap homeImage,gameImage;
     private final boolean home;
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
