@@ -204,27 +204,56 @@ public final class MainActivity extends Activity {
     private static final class HomeSlot{
         final View view;
         final int x,y,w,h;
-        HomeSlot(View view,int x,int y,int w,int h){
+        final int placement; // 0 = content, 1 = bottom nav, 2 = full-screen background
+        HomeSlot(View view,int x,int y,int w,int h,int placement){
             this.view=view;this.x=x;this.y=y;this.w=w;this.h=h;
+            this.placement=placement;
         }
     }
     private final class HomeLayout extends FrameLayout{
+        // 1260-wide design coordinates. The bottom nav is independently anchored and
+        // never stretched by the screen's vertical aspect ratio.
+        private static final int DESIGN_WIDTH=1260;
+        private static final int DESIGN_CONTENT_HEIGHT=2612;
+        private static final int DESIGN_NAV_HEIGHT=188;
         private final java.util.ArrayList<HomeSlot> slots=new java.util.ArrayList<>();
         HomeLayout(){super(MainActivity.this);setClipChildren(false);}
         void place(View view,int x,int y,int w,int h){
             addView(view,new FrameLayout.LayoutParams(1,1));
-            slots.add(new HomeSlot(view,x,y,w,h));
+            slots.add(new HomeSlot(view,x,y,w,h,0));
+        }
+        void placeBottom(View view,int x,int y,int w,int h){
+            addView(view,new FrameLayout.LayoutParams(1,1));
+            slots.add(new HomeSlot(view,x,y,w,h,1));
+        }
+        void placeFill(View view){
+            addView(view,new FrameLayout.LayoutParams(1,1));
+            slots.add(new HomeSlot(view,0,0,0,0,2));
         }
         @Override protected void onMeasure(int widthSpec,int heightSpec){
             int width=MeasureSpec.getSize(widthSpec);
             int height=MeasureSpec.getSize(heightSpec);
-            float sx=width/1260f,sy=height/2800f;
+            float unit=width/(float)DESIGN_WIDTH;
+            int navTop=Math.max(0,height-Math.round(DESIGN_NAV_HEIGHT*unit));
+            // Compress only the empty vertical gaps/content; keep all five nav tabs
+            // proportionate even when the status/gesture bars reduce usable height.
+            float contentYScale=Math.min(unit,navTop/(float)DESIGN_CONTENT_HEIGHT);
             for(HomeSlot slot:slots){
                 FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)slot.view.getLayoutParams();
-                p.width=Math.max(1,Math.round(slot.w*sx));
-                p.height=Math.max(1,Math.round(slot.h*sy));
-                p.leftMargin=Math.round(slot.x*sx);
-                p.topMargin=Math.round(slot.y*sy);
+                if(slot.placement==2){
+                    p.width=width;p.height=height;
+                    p.leftMargin=0;p.topMargin=0;
+                }else if(slot.placement==1){
+                    p.width=Math.max(1,Math.round(slot.w*unit));
+                    p.height=Math.max(1,Math.round(slot.h*unit));
+                    p.leftMargin=Math.round(slot.x*unit);
+                    p.topMargin=navTop+Math.round(slot.y*unit);
+                }else{
+                    p.width=Math.max(1,Math.round(slot.w*unit));
+                    p.height=Math.max(1,Math.round(slot.h*contentYScale));
+                    p.leftMargin=Math.round(slot.x*unit);
+                    p.topMargin=Math.round(slot.y*contentYScale);
+                }
             }
             super.onMeasure(widthSpec,heightSpec);
         }
@@ -240,7 +269,9 @@ public final class MainActivity extends Activity {
         root=layout;
         sceneView=null;
         layout.setBackgroundColor(DARK);
-        layout.place(homeImage("backgrounds/lobby_background.png","",null),0,0,1260,2800);
+        ImageView lobbyBackdrop=homeImage("backgrounds/lobby_background.png","",null);
+        lobbyBackdrop.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        layout.placeFill(lobbyBackdrop);
 
         // Title panel.
         layout.place(homeImage("panels/panel_title.png","",null),45,173,1170,285);
@@ -283,14 +314,15 @@ public final class MainActivity extends Activity {
                 "双 AI 观战","自动走棋 · 调整速度 · 支持暂停",
                 2251,()->newGame(MODE_AI_AI,XiangqiGame.RED));
 
-        // Go-style navigation v2: slim bar, five evenly aligned tabs and a light selected halo.
-        // PNGs live in ui/home/navigation and ui/home/icons.
-        layout.place(homeImage("navigation/nav_background.png","",null),0,2612,1260,188);
-        layout.place(homeImage("navigation/nav_selected_background.png","",null),
-                12,2612,228,188);
+        // Go-inspired v3: use the exact 12 PNGs uploaded to ui/home, no substitute
+        // icons, no old square/tab backgrounds, no independently painted preview.
+        // Anchor the whole bar to the available viewport bottom at native proportions.
+        layout.placeBottom(homeImage("navigation/nav_background.png","",null),
+                0,0,1260,188);
+        layout.placeBottom(homeImage("navigation/nav_selected_background.png","",null),
+                12,0,228,188);
         String[] navNames={"home","match","record","training","settings"};
         String[] navLabels={"首页","对弈","棋谱","训练","设置"};
-        int[] navX={0,252,504,756,1008};
         Runnable[] handlers={
             ()->{},
             ()->newGame(MODE_HUMAN_AI,XiangqiGame.RED),
@@ -300,16 +332,24 @@ public final class MainActivity extends Activity {
         };
         for(int i=0;i<navNames.length;i++){
             final int idx=i;
-            String icon="icons/nav_"+navNames[i]+(i==0?"_selected":"_normal")+".png";
-            layout.place(homeImage(icon,"",null),navX[i]+64,2614,124,124);
-            layout.place(homeText(navLabels[i],43,
-                    i==0?Color.rgb(255,215,126):Color.rgb(219,225,209),
-                    i==0,Gravity.CENTER),navX[i]+18,2733,216,51);
-            View tab=new View(this);
-            tab.setClickable(true);
-            tab.setContentDescription(navLabels[i]);
-            tab.setOnClickListener(v->handlers[idx].run());
-            layout.place(tab,navX[i],2612,252,188);
+            final int x=i*252;
+            boolean selected=i==0;
+            String iconPath="icons/nav_"+navNames[i]+(selected?"_selected":"_normal")+".png";
+            ImageView image=homeImage(iconPath,"",null);
+            image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            layout.placeBottom(image,x+64,0,124,124);
+            // The selected PNG contains a short gold line at y=160; put the label
+            // above it instead of drawing the characters across the underline.
+            TextView name=homeText(navLabels[i],43,
+                    selected?Color.rgb(255,215,126):Color.rgb(219,225,209),
+                    selected,Gravity.CENTER);
+            layout.placeBottom(name,x+18,105,216,44);
+            View tap=new View(this);
+            tap.setClickable(true);
+            tap.setContentDescription(navLabels[i]);
+            tap.setSelected(selected);
+            tap.setOnClickListener(v->handlers[idx].run());
+            layout.placeBottom(tap,x,0,252,188);
         }
         setContentView(layout);
     }
